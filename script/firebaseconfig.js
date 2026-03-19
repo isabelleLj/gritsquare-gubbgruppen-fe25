@@ -133,3 +133,11 @@ loginBtn.addEventListener("click", () => {
     });
 });
 
+// i github.com på din fork, synca med OG repo
+// i github desktop sync så att din lokala pc pullar atta commisten
+//gå sedan till din branch
+// i branch tabben finns det en option att merga vilket är main -> branch
+//då har du alla ändringar + din feature i samma branch
+
+//SLUTET
+//i branch tabben finns den slutligen en pullrequest knapp som skickar den feature branch -> OGs main
