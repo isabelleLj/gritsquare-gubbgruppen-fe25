@@ -94,7 +94,7 @@ export function displayAllUsers(users) {
       <span>${user.name}: ${user.message || "Inget meddelande"}</span>
     `;
 
-    // 🔥 DRAG START
+    //  DRAG START
     div.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", key);
       div.classList.add("dragging");
@@ -109,27 +109,27 @@ export function displayAllUsers(users) {
 }
 
 
-// Håller koll på inloggad användare
-let currentUser = null;
-
-// Event listener för knappen 
 const postBtn = document.getElementById("postBtn");
 const usernameInput = document.getElementById("usernameInput");
-const usernameCol = document.getElementById("usernameCol");
 const messageInput = document.getElementById("messageInput");
+
+
+    // Spela upp pop-ljud
+    const audio = new Audio("pop.mp3");
+    audio.play().catch(err => console.warn("Audio playback failed:", err));
+
 
 postBtn.addEventListener("click", async (e) => {
   e.preventDefault();
 
   // Censurera namn och meddelande
-  const rawName = currentUser ? currentUser.displayName : usernameInput.value.trim();
-  const censoredName = censorBadWords(rawName);
+  const censoredName = censorBadWords(usernameInput.value.trim());
   const censoredMessage = censorBadWords(messageInput.value.trim());
 
   const userObj = {
-    owner: currentUser ? currentUser.uid : "anonymous",
-    name: censoredName,      // censurerat namn
-    message: censoredMessage // censurerat meddelande
+    owner: auth.currentUser ? auth.currentUser.uid : "anonymous",
+    name: censoredName,
+    message: censoredMessage
   }; 
 
   if (!userObj.name || !userObj.message) {
@@ -144,11 +144,11 @@ postBtn.addEventListener("click", async (e) => {
     displayAllUsers(users);
 
     // Spela upp pop-ljud
-    const audio = new Audio("../pop.mp3");
+    const audio = new Audio("./pop.mp3");
     audio.play().catch(err => console.warn("Audio playback failed:", err));
 
     // Töm inputfält
-    if (!currentUser) usernameInput.value = "";
+    usernameInput.value = "";
     messageInput.value = "";
   } else {
     alert("Failed to post message, please try again");
@@ -167,50 +167,45 @@ postBtn.addEventListener("click", async (e) => {
 
 // Logga in med google genom firebase / Henrik
 
+
 const loginBtn = document.getElementById("loginBtn");
-const loginItem = document.getElementById("loginItem");
 const logoutBtn = document.getElementById("logoutBtn");
 const logoutItem = document.getElementById("logoutItem");
-const signedInItem = document.getElementById("signedInItem");
-const signedInLabel = document.getElementById("signedInLabel");
 
 onAuthStateChanged(auth, (user) => {
-  currentUser = user || null;
   if (user) {
-    console.log("User is signed in:", user.displayName);
-    if (loginItem) loginItem.style.display = "none";
-    if (signedInItem) signedInItem.style.display = "flex";
-    if (signedInLabel) signedInLabel.textContent = "Signed in as " + (user.displayName || user.email);
-    if (logoutItem) logoutItem.style.display = "";
-    if (usernameCol) usernameCol.style.display = "none";
+    loginBtn.textContent = `Signed in as ${user.displayName || user.email}`;
+    loginBtn.disabled = true;
+    logoutItem.style.display = "";
+    usernameInput.value = user.displayName || user.email;
+    usernameInput.closest(".col-12.col-md-3").style.display = "none";
   } else {
-    console.log("No user is signed in");
-    if (loginItem) loginItem.style.display = "";
-    if (signedInItem) signedInItem.style.display = "none";
-    if (logoutItem) logoutItem.style.display = "none";
-    if (usernameCol) usernameCol.style.display = "";
+    loginBtn.textContent = "Sign in with Google";
+    loginBtn.disabled = false;
+    logoutItem.style.display = "none";
+    usernameInput.value = "";
+    usernameInput.closest(".col-12.col-md-3").style.display = "";
   }
 });
 
-if (loginBtn) {
-  loginBtn.addEventListener("click", () => {
-    signInWithPopup(auth, new GoogleAuthProvider())
-      .then((result) => {
-        console.log("User signed in:", result.user.displayName);
-      })
-      .catch((error) => {
-        console.error("Error signing in:", error);
-      });
-  });
-}
+logoutBtn.addEventListener("click", () => {
+  signOut(auth).catch((error) => console.error("Sign-out error:", error));
+});
 
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", () => {
-    signOut(auth)
-      .then(() => console.log("User signed out"))
-      .catch((error) => console.error("Error signing out:", error));
-  });
-}
+loginBtn.addEventListener("click", () => {
+  signInWithPopup(auth, new GoogleAuthProvider())
+    .then((result) => {
+      console.log("User signed in:", result.user);
+    })
+    .catch((error) => {
+      console.error("Error signing in:", error);
+      if (error.code === "auth/unauthorized-domain") {
+        alert("Sign-in failed: this domain is not authorized in Firebase.\nOpen the app via a local server (e.g. Live Server) instead of opening the file directly.");
+      } else {
+        alert(`Sign-in failed: ${error.message}`);
+      }
+    });
+});
 
 
 
